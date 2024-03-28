@@ -21,7 +21,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	mkdir /home/$USER/CatMonitoring/Videos
 	cd /home/$USER/CatMonitoring/repository
 	git clone https://github.com/DotaPie/CatMonitoring.git .
-	str1='s/$USER/' && str2='/g' 
+	str1='s/dotapie/' && str2='/g' 
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/MotionConfs/motion.conf
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py
 	sudo apt install motion -y
