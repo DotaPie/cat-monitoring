@@ -1,6 +1,6 @@
 # Cat Monitoring  
 - this project records video from USB web cams (number can be modified by adding or removing camera configs) on motion and then optionally uploads them to your google drive
-- **this projects does not rely on any kind of AI**
+- **this projects does not rely on any kind of AI, only on changes in scene**
 - there is no real added value to this project, only goal is to help with setting up correctly motion package and optionally adding google drive upload capability
 - works on most of the linux distributions
 - if you wish to upload to google drive, linux with gui is required
@@ -8,8 +8,9 @@
 - recording is handled by motion package
 - video uploading is handled by python script (using google API)
 - TODO:
-	- re-check motion.conf (there has been upgrade of motion and its configuration possibilities)
- 	- add option to run all scripts as service
+	- verify motion.conf (there has been upgrade of motion and its configuration possibilities)
+    	- replace motion with cat detection (opencv2 in python)
+       	- add option to run all scripts as service
 
 Thank you motion (https://motion-project.github.io/) for motion detection package and NeuralNine (https://www.youtube.com/@NeuralNine) for provided example code on how to upload to google drive with python.
 
@@ -30,7 +31,8 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	sudo cp /home/$USER/CatMonitoring/repository/src/MotionConfs/* /etc/motion  
 	sudo chmod a+rwx /home/$USER/CatMonitoring/Videos 
 
-- verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf (/dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their USB plugs)
+- verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf
+- /dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their physical USB sockets
 
 ## Run motion (window can be closed after running script):
 	sudo motion
