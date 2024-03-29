@@ -32,7 +32,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 
 - verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf (/dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their USB plugs)
 
-## Run motion:
+## Run motion (window can be closed after running script):
 	sudo motion
 
 - if a motion is picked up by camera, video is recorded and stored into /home/$USER/CatMonitoring
@@ -50,8 +50,8 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	python3 -m pip install --upgrade pip  
 	python3 -m pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib  
   
-## Run python script (keep window opened):  
+## Run python script (window can be closed after running script):  
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate 
-	python3 /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py  
+	python3 /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py > /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.log &
 
 - authorize via web browser to your google account (you can follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 19:48 - 22:00), this step is needed only once every 1-3 months when token expires, sometimes you can be prompted to sign in directly in console, but it never worked for me, i just rejected all cokies by pressing N and then Q for leaving and ten just copy provided URL that is now in the console and grant the access
