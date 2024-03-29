@@ -1,5 +1,5 @@
 # Cat Monitoring  
-- this project records video from USB web cams (number can be modified by adding or removing camera configs) on motion and then optionally uploads them to your google drive
+- this project records video from 2 USB web cams (number can be modified by adding or removing camera configs) on motion and then optionally uploads them to your google drive
 - **this projects does not rely on any kind of AI, only on changes in scene**
 - there is no real added value to this project, only goal is to help with setting up correctly motion package and optionally adding google drive upload capability
 - works on most of the linux distributions
