@@ -9,6 +9,7 @@
 - video uploading is handled by python script (using google API)
 - TODO:
 	- verify motion.conf (there has been upgrade of motion and its configuration possibilities)
+	- log with timestamp via logging python package
 	- replace motion with cat detection (opencv2 in python)
 	- add option to run all scripts as service
 
