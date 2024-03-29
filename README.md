@@ -32,11 +32,13 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	sudo cp /home/$USER/CatMonitoring/repository/src/MotionConfs/* /etc/motion  
 	sudo chmod a+rwx /home/$USER/CatMonitoring/Videos 
 
-- verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf
-- /dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their physical USB sockets
 - if you want more or less USB web cams:
 	- you need to add or remove /etc/motion/camx.conf and modify identifications inside, there is always one file per each camera
 	- add or remove these files in /etc/motion/motion.conf (look for "Camera config files" section) and add or remove as you wish
+- verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf
+- /dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their physical USB sockets
+![Untitled](https://github.com/DotaPie/cat-monitoring/assets/56398587/7acddc0d-ca55-432d-940c-c03e672ccb53)
+
 
 ## Run motion (window can be closed after running script):
 	sudo motion
