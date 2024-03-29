@@ -35,8 +35,8 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 - verify cam1 and cam2 /dev/v4l/by-path/* path in /etc/motion/cam1.conf and /etc/motion/cam1.conf
 - /dev/v4l/by-path/* works even if your cams have the same ID, name might be different, usually ends with index0, just dont swap cams in their physical USB sockets
 - if you want more or less USB web cams:
-	- you need to add or remove camx.conf and modify identifications inside
-	- add or remove these files in motion.conf (look for "Camera config files" section) and add or remove as you wish
+	- you need to add or remove /etc/motion/camx.conf and modify identifications inside
+	- add or remove these files in /etc/motion/motion.conf (look for "Camera config files" section) and add or remove as you wish
 
 ## Run motion (window can be closed after running script):
 	sudo motion
