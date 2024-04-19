@@ -20,7 +20,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
  	mkdir /home/$USER/CatMonitoring/repository 
 	mkdir /home/$USER/CatMonitoring/Videos
 	cd /home/$USER/CatMonitoring/repository
-	git clone https://github.com/DotaPie/CatMonitoring.git .
+	git clone https://github.com/DotaPie/cat-monitoring.git .
 	str1='s/dotapie/' && str2='/g' 
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/MotionConfs/motion.conf
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py
