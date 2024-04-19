@@ -9,8 +9,6 @@
 - video uploading is handled by python script (using google API)
 - TODO:
 	- verify motion.conf (there has been upgrade of motion and its configuration possibilities)
-	- log with timestamp via logging python package
-	- add option to run all scripts as service
 
 Thank you motion (https://motion-project.github.io/) for motion detection package and NeuralNine (https://www.youtube.com/@NeuralNine) for provided example code on how to upload to google drive with python.
 
@@ -39,7 +37,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 ![Untitled](https://github.com/DotaPie/cat-monitoring/assets/56398587/7acddc0d-ca55-432d-940c-c03e672ccb53)
 
 
-## Run motion (window can be closed after running script):
+## Run motion (keep window opened):
 	sudo motion
 
 - if a motion is picked up by camera, video is recorded and stored into /home/$USER/CatMonitoring
@@ -57,7 +55,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	python3 -m pip install --upgrade pip  
 	python3 -m pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib  
   
-## Run python script (window can be closed after running script):  
+## Run python script (keep window opened):  
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate 
 	python3 -u /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py > /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.log &
 
