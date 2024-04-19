@@ -15,7 +15,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 # Installation guide  
 
 ## Motion install:  
-	sudo apt update && sudo apt upgrade -y 
+	sudo apt update && sudo apt upgrade -y && sudo apt install motion -y
 	mkdir /home/$USER/CatMonitoring
  	mkdir /home/$USER/CatMonitoring/repository 
 	mkdir /home/$USER/CatMonitoring/Videos
@@ -24,7 +24,6 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	str1='s/dotapie/' && str2='/g' 
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/MotionConfs/motion.conf
 	sed -i $str1$USER$str2 /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py
-	sudo apt install motion -y
 	sudo rm /etc/motion/*  
 	sudo cp /home/$USER/CatMonitoring/repository/src/MotionConfs/* /etc/motion  
 	sudo chmod a+rwx /home/$USER/CatMonitoring/Videos 
