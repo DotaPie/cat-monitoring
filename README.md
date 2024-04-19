@@ -57,6 +57,6 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
   
 ## Run python script (keep window opened):  
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate 
-	python3 -u /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py > /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.log &
+	python3 -u /home/$USER/CatMonitoring/repository/src/VideosToDriveSync.py
 
 - authorize via web browser to your google account (you can follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 19:48 - 22:00), this step is needed only once every 1-3 months when token expires, sometimes you can be prompted to sign in directly in console, but it never worked for me, i just rejected all cokies by pressing N and then Q for leaving and ten just copy provided URL that is now in the console and grant the access
