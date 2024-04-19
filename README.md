@@ -10,7 +10,6 @@
 - TODO:
 	- verify motion.conf (there has been upgrade of motion and its configuration possibilities)
 	- log with timestamp via logging python package
-	- replace motion with cat detection (opencv2 in python)
 	- add option to run all scripts as service
 
 Thank you motion (https://motion-project.github.io/) for motion detection package and NeuralNine (https://www.youtube.com/@NeuralNine) for provided example code on how to upload to google drive with python.
