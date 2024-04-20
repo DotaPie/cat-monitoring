@@ -6,6 +6,9 @@
 - if you wish to upload to google drive, linux with gui is required (for google account authentication via browser)
 - recording is handled by motion package
 - video uploading is handled by python script (using google API or FTP lib)
+- TODO:
+	- run motion in background (this is simple, only change *daemon* to *on* in /etc/motion/motion.conf)
+	- run python script in background (I have issues running python in background while keeping it in venv)
 
 Thank you motion (https://motion-project.github.io/) for motion detection package and NeuralNine (https://www.youtube.com/@NeuralNine) for provided example code on how to upload to google drive with python.
 
@@ -37,7 +40,6 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	sudo motion
 
 - if a motion is picked up by camera, video is recorded and stored into /home/$USER/CatMonitoring
-- console window can be closed now, process is now running on background
 - if you wish to upload videos automatically to google drive or FTP server, more steps are required
 
 ## If you want to sync to the google drive, allow google API on your account and generate credentials.json:  
