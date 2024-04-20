@@ -41,10 +41,6 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 
 - if a motion is picked up by camera, video is recorded and stored into /home/$USER/CatMonitoring
 - if you wish to upload videos automatically to google drive or FTP server, more steps are required
-
-## If you want to sync to the google drive, allow google API on your account and generate credentials.json:  
-- just watch and follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 1:30 - 5:50 to obtain your credentials.json
-- after you download your credentials json file, rename it to credentials.json and put it to /home/$USER/CatMonitoring folder
  
 ## Python script install:  
 	mkdir /home/$USER/CatMonitoring/CatMonitoringEnv  
@@ -56,6 +52,10 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 - open /home/$USER/CatMonitoring/repository/src/SyncVideos.py and set *uploadTarget* either to *UploadTarget.FTP* or *UploadTarget.GOOGLE_DRIVE*
 - if you wish to use FTP, make sure to change *targetFtpHostname*, *targetFtpUsername*, *targetFtpPassword* and *targetFtpPath*
 - local paths such as *credentialsAndTokenPath* and *videosPath* should be already set correctly
+
+## If you want to sync to the google drive, allow google API on your account and generate credentials.json:  
+- just watch and follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 1:30 - 5:50 to obtain your credentials.json
+- after you download your credentials json file, rename it to credentials.json and put it to /home/$USER/CatMonitoring folder
   
 ## Run python script (keep window opened):  
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate 
