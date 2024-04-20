@@ -1,6 +1,9 @@
 import os
 import os.path
-
+from enum import Enum
+from datetime import date
+import time
+import ftplib
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -8,21 +11,32 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
-import time
+# ENUMS #
+class UploadTarget(Enum):
+    GOOGLE_DRIVE = 1
+    FTP = 2
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+# GLOBALS #
+fileManager = {}
 
-# CONF #
-syncAvailableTimeoutSeconds = 300 # how many seconds file must not be written into to be flagged as ready to sync
+# CONF - GENERAL #
+uploadTarget = UploadTarget.FTP
+syncAvailableTimeoutSeconds = 5 # how many seconds file must not be written into to be flagged as ready to sync
 
-# PATHS #
+# CONF - FTP #
+HOSTNAME = "192.168.1.175"
+USERNAME = "ftp-general"
+PASSWORD = "sa)7@}do" 
+targetFtpPath = "CatMonitoring/CatMonitoring" # note: if FTP is running on windows, you might want "\\" instead of '/'
+
+# PATHS - LOCAL #
 credentialsAndTokenPath = "/home/dotapie/CatMonitoring"
 videosPath = "/home/dotapie/CatMonitoring/Videos"
 
-fileManager = {}
+def initGoogleDriveAndSyncFile(fileName = ""):
+    SCOPES = ["https://www.googleapis.com/auth/drive"]
 
-def initGoogleDriveAndSyncFile(file = ""):
-    fullFilePath = f"{videosPath}/{file}"
+    fullFilePath = f"{videosPath}/{fileName}"
     creds = None
 
     if os.path.exists(credentialsAndTokenPath + "/token.json"):
@@ -53,15 +67,15 @@ def initGoogleDriveAndSyncFile(file = ""):
                 "mimeType": "application/vnd.google-apps.folder"
             }
 
-            file = service.files().create(body=file_metadata, fields="id").execute()
+            folder = service.files().create(body=file_metadata, fields="id").execute()
 
-            folder_id = file.get('id')
+            folder_id = folder.get('id')
         else:
             folder_id = response['files'][0]['id']
 
-        if not file == "":
+        if not fileName == "":
             file_metadata = {
-                "name": file,
+                "name": fileName,
                 "parents": [folder_id]
             }
 
@@ -76,9 +90,9 @@ def initGoogleDriveAndSyncFile(file = ""):
         print("Error: " + str(e))
 
 def fileManagerHandle():
-    for file in os.listdir(videosPath):
-        if not file.endswith(".filepart"):
-            fullFilePath = f"{videosPath}/{file}"
+    for fileName in os.listdir(videosPath):
+        if not fileName.endswith(".filepart"):
+            fullFilePath = f"{videosPath}/{fileName}"
 
             # add file
             if not fullFilePath in fileManager:
@@ -100,12 +114,15 @@ def fileManagerHandle():
 
 def syncAndDeleteAvailableFiles():
     # sync files that are flagged to sync
-    for file in os.listdir(videosPath):
-        if not file.endswith(".filepart"):
-            fullFilePath = f"{videosPath}/{file}"
+    for fileName in os.listdir(videosPath):
+        if not fileName.endswith(".filepart"):
+            fullFilePath = f"{videosPath}/{fileName}"
 
             if fileManager[fullFilePath][2] == True:
-                initGoogleDriveAndSyncFile(file)
+                if(uploadTarget == UploadTarget.GOOGLE_DRIVE):
+                    initGoogleDriveAndSyncFile(fileName)
+                elif(uploadTarget == UploadTarget.FTP):
+                    initFtpAndSyncFile(fileName)
 
                 # remove file from file manager
                 fileManager.pop(fullFilePath)
@@ -114,10 +131,39 @@ def syncAndDeleteAvailableFiles():
                 os.remove(fullFilePath)
                 print(fullFilePath + " deleted")
  
+def getYYMMDD():
+    return date.today().strftime("%Y%m%d")[2:]
+
+def verifyDir(ftpServer):
+    try:
+        ftpResponse = ftpServer.mkd(f"{targetFtpPath}/{getYYMMDD()}")
+        print("Creating directory")
+    except:
+        pass
+
+def initFtpAndSyncFile(fileName = ""):
+    fullFilePath = f"{videosPath}/{fileName}"
+
+    ftpServer = ftplib.FTP(HOSTNAME, USERNAME, PASSWORD)
+    ftpServer.encoding = "utf-8"
+
+    verifyDir(ftpServer)
+
+    if(fileName != ""):
+        with open(fullFilePath, "rb") as file:
+            ftpServer.storbinary(f"STOR {targetFtpPath}/{getYYMMDD()}/{fileName}", file) # note: if FTP is running on windows, you might want "\\" instead of '/'
+            print(fullFilePath + " synced")
+
+    ftpServer.quit()
+
 def main(): 
-    # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
-    initGoogleDriveAndSyncFile()
-    print("Google drive connection verified")
+    if uploadTarget == UploadTarget.GOOGLE_DRIVE:
+        # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
+        initGoogleDriveAndSyncFile()
+        print("Google drive connection verified")
+    elif uploadTarget == UploadTarget.FTP:
+        initFtpAndSyncFile()
+        print("FTP connection verified")
 
     while 1:
         # add new file to file manager, update timestamp if size changed, flag as available to sync if enaugh time without size change passes
