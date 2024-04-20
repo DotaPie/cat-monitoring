@@ -38,9 +38,9 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 
 - if a motion is picked up by camera, video is recorded and stored into /home/$USER/CatMonitoring
 - console window can be closed now, process is now running on background
-- if you wish to upload videos automatically to google drive, more steps are required
+- if you wish to upload videos automatically to google drive or FTP server, more steps are required
 
-## Allow google API on your account and generate credentials.json:  
+## If you want to sync to the google drive, allow google API on your account and generate credentials.json:  
 - just watch and follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 1:30 - 5:50 to obtain your credentials.json
 - after you download your credentials json file, rename it to credentials.json and put it to /home/$USER/CatMonitoring folder
  
@@ -50,9 +50,14 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate  
 	python3 -m pip install --upgrade pip  
 	python3 -m pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib  
+
+- open /home/$USER/CatMonitoring/repository/src/SyncVideos.py and set *uploadTarget* either to *UploadTarget.FTP* or *UploadTarget.GOOGLE_DRIVE*
+- if you wish to use FTP, make sure to change *targetFtpHostname*, *targetFtpUsername*, *targetFtpPassword* and *targetFtpPath*
+- local paths such as *credentialsAndTokenPath* and *videosPath* should be already set correctly
   
 ## Run python script (keep window opened):  
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate 
 	python3 -u /home/$USER/CatMonitoring/repository/src/SyncVideos.py
 
-- authorize via web browser to your google account (you can follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 19:48 - 22:00), this step is needed only once every 1-3 months when token expires, sometimes you can be prompted to sign in directly in console, but it never worked for me, i just rejected all cokies by pressing N and then Q for leaving and ten just copy provided URL that is now in the console and grant the access
+## If you want to sync to the google drive, you have to do one more step:  
+- authorize via web browser to your google account (you can follow https://www.youtube.com/watch?v=fkWM7A-MxR0 ... 19:48 - 22:00), this step is needed only once a month when token expires (honestly not sure here, token always lasts me couple of weeks), sometimes you can be prompted to sign in directly in console, but it never worked for me, I just rejected all cokies by pressing N and then Q for leaving and ten just copy provided URL that is now in the console and grant the access
