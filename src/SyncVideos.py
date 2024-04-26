@@ -19,9 +19,34 @@ class UploadTarget(Enum):
 # GLOBALS #
 fileManager = {}
 
+'''
+Example of file manager state:
+
+-----------------------------------------------------
+| absolute file path | timestamp | size (B) | ready |
+-----------------------------------------------------
+| /home/test1.txt    | 8.0000000 | 4        | True  |
+| /home/test2.txt    | 24.000000 | 8        | False |
+| /home/test3.txt    | 39.950000 | 128      | False |
+-----------------------------------------------------
+
+Whole file manager is simple map.
+Description of parameters from table:
+    - absolute file path: key of the map (with value as the list that consists of timestamp, size and ready)
+    - timestampe: timestamp of the last increment of the file size
+    - size: size of the file in bytes
+    - ready: if "syncAvailableTimeoutSeconds" seconds has passed without being written into, file is flagged as true in this value and ready for sync
+
+What is happening with 3 files?
+Assume current timestamp is 40.000000 (CPU uptime).
+File test1.txt was not written into for more than "syncAvailableTimeoutSeconds" seconds, so it has been flagged to sync.
+File test2.txt was written into 16 seconds ago, which most likely means it is ready to sync, but "syncAvailableTimeoutSeconds" seconds has not passed yet.
+File test3.txt was written into only couple of miliseconds ago, which most likely means it is actively being written into.  
+'''
+
 # CONF - GENERAL #
 uploadTarget = UploadTarget.FTP
-syncAvailableTimeoutSeconds = 5 # how many seconds file must not be written into to be flagged as ready to sync
+syncAvailableTimeoutSeconds = 30 # how many seconds file must not be written into to be flagged as ready to sync
 
 # CONF - FTP #
 HOSTNAME = "192.168.1.175"
@@ -53,41 +78,37 @@ def initGoogleDriveAndSyncFile(fileName = ""):
         with open(credentialsAndTokenPath + '/token.json', 'w') as token:
             token.write(creds.to_json())
 
-    try:
-        service = build("drive", "v3", credentials=creds)
+    service = build("drive", "v3", credentials=creds)
 
-        response = service.files().list(
-            q="name='CatMonitoring' and mimeType='application/vnd.google-apps.folder'",
-            spaces='drive'
-        ).execute()
+    response = service.files().list(
+        q="name='CatMonitoring' and mimeType='application/vnd.google-apps.folder'",
+        spaces='drive'
+    ).execute()
 
-        if not response['files']:
-            file_metadata = {
-                "name": "CatMonitoring",
-                "mimeType": "application/vnd.google-apps.folder"
-            }
+    if not response['files']:
+        file_metadata = {
+            "name": "CatMonitoring",
+            "mimeType": "application/vnd.google-apps.folder"
+        }
 
-            folder = service.files().create(body=file_metadata, fields="id").execute()
+        folder = service.files().create(body=file_metadata, fields="id").execute()
 
-            folder_id = folder.get('id')
-        else:
-            folder_id = response['files'][0]['id']
+        folder_id = folder.get('id')
+    else:
+        folder_id = response['files'][0]['id']
 
-        if not fileName == "":
-            file_metadata = {
-                "name": fileName,
-                "parents": [folder_id]
-            }
+    if not fileName == "":
+        file_metadata = {
+            "name": fileName,
+            "parents": [folder_id]
+        }
 
-            media = MediaFileUpload(fullFilePath)
-            upload_file = service.files().create(body=file_metadata,
-                                                media_body = media,
-                                                fields="id").execute()
-            
-            print(fullFilePath + " synced")
-            
-    except HttpError as e:
-        print("Error: " + str(e))
+        media = MediaFileUpload(fullFilePath)
+        upload_file = service.files().create(body=file_metadata,
+                                            media_body = media,
+                                            fields="id").execute()
+        
+        print(fullFilePath + " synced")
 
 def fileManagerHandle():
     for fileName in os.listdir(videosPath):
@@ -119,10 +140,17 @@ def syncAndDeleteAvailableFiles():
             fullFilePath = f"{videosPath}/{fileName}"
 
             if fileManager[fullFilePath][2] == True:
-                if(uploadTarget == UploadTarget.GOOGLE_DRIVE):
-                    initGoogleDriveAndSyncFile(fileName)
-                elif(uploadTarget == UploadTarget.FTP):
-                    initFtpAndSyncFile(fileName)
+                if uploadTarget == UploadTarget.GOOGLE_DRIVE:
+                    try:
+                        # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
+                        initGoogleDriveAndSyncFile(fileName)
+                    except Exception as e:
+                        print("Google drive connection failed (" + repr(e) + ")")
+                elif uploadTarget == UploadTarget.FTP:
+                    try:
+                        initFtpAndSyncFile(fileName)
+                    except Exception as e:
+                        print("FTP connection failed (" + repr(e) + ")") 
 
                 # remove file from file manager
                 fileManager.pop(fullFilePath)
@@ -158,12 +186,18 @@ def initFtpAndSyncFile(fileName = ""):
 
 def main(): 
     if uploadTarget == UploadTarget.GOOGLE_DRIVE:
-        # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
-        initGoogleDriveAndSyncFile()
-        print("Google drive connection verified")
+        try:
+            # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
+            initGoogleDriveAndSyncFile()
+            print("Google drive connection verified")
+        except Exception as e:
+            print("Google drive connection failed (" + repr(e) + ")")
     elif uploadTarget == UploadTarget.FTP:
-        initFtpAndSyncFile()
-        print("FTP connection verified")
+        try:
+            initFtpAndSyncFile()
+            print("FTP connection verified")
+        except Exception as e:
+            print("FTP connection failed (" + repr(e) + ")") 
 
     while 1:
         # add new file to file manager, update timestamp if size changed, flag as available to sync if enaugh time without size change passes
