@@ -47,7 +47,7 @@ Thank you motion (https://motion-project.github.io/) for motion detection packag
 	python3 -m venv /home/$USER/CatMonitoring/CatMonitoringEnv
 	source /home/$USER/CatMonitoring/CatMonitoringEnv/bin/activate  
 	python3 -m pip install --upgrade pip  
-	python3 -m pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib  
+	python3 -m pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib RPi.GPIO psutil
 
 - open /home/$USER/CatMonitoring/repository/src/SyncVideos.py and set *uploadTarget* either to *UploadTarget.FTP* or *UploadTarget.GOOGLE_DRIVE*
 - if you wish to use FTP, make sure to change *targetFtpHostname*, *targetFtpUsername*, *targetFtpPassword* and *targetFtpPath*
