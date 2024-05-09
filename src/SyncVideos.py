@@ -4,20 +4,35 @@ from enum import Enum
 from datetime import date
 import time
 import ftplib
+import psutil
+import RPi.GPIO as GPIO
+from threading import Thread
+from threading import Event
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+import atexit
 
 # ENUMS #
 class UploadTarget(Enum):
     GOOGLE_DRIVE = 1
     FTP = 2
 
+class LedIndication(Enum):
+    STATIC_OFF = 1
+    STATIC_ON = 2
+    BLINK = 3
+
 # GLOBALS #
 fileManager = {}
+thread = None
+event = None
+ledIndication = LedIndication.BLINK
+ledIndicationChangeTimer = 0
+ledGpio = 13 # use GPIO value, not physical board value
 
 '''
 Example of file manager state:
@@ -47,16 +62,23 @@ File test3.txt was written into only couple of miliseconds ago, which most likel
 # CONF - GENERAL #
 uploadTarget = UploadTarget.FTP
 syncAvailableTimeoutSeconds = 30 # how many seconds file must not be written into to be flagged as ready to sync
+motionProcessName = "motion"
 
 # CONF - FTP #
 HOSTNAME = "192.168.1.175"
 USERNAME = "ftp-general"
 PASSWORD = "sa)7@}do" 
-targetFtpPath = "CatMonitoring/CatMonitoring" # note: if FTP is running on windows, you might want "\\" instead of '/'
+targetFtpPath = "/CatMonitoring/CatMonitoring" # note: if FTP is running on windows, you might want "\\" instead of '/'
 
 # PATHS - LOCAL #
 credentialsAndTokenPath = "/home/dotapie/CatMonitoring"
 videosPath = "/home/dotapie/CatMonitoring/Videos"
+
+def checkProcess(process_name):
+    for process in psutil.process_iter(['pid', 'name']):
+        if process.info['name'] == process_name:
+            return True
+    return False
 
 def initGoogleDriveAndSyncFile(fileName = ""):
     SCOPES = ["https://www.googleapis.com/auth/drive"]
@@ -111,6 +133,10 @@ def initGoogleDriveAndSyncFile(fileName = ""):
         print(fullFilePath + " synced")
 
 def fileManagerHandle():
+    global ledIndication
+    global ledIndicationChangeTimer
+    anyFileBeingWrittenInto = False
+    
     for fileName in os.listdir(videosPath):
         if not fileName.endswith(".filepart"):
             fullFilePath = f"{videosPath}/{fileName}"
@@ -124,6 +150,8 @@ def fileManagerHandle():
             size = os.path.getsize(fullFilePath)
 
             if size > fileManager[fullFilePath][1]:
+                anyFileBeingWrittenInto = True
+                ledIndicationChangeTimer = time.time() 
                 fileManager[fullFilePath][0] = time.time()
                 fileManager[fullFilePath][1] = size
                 print(fullFilePath + " was written into")
@@ -132,6 +160,18 @@ def fileManagerHandle():
             if time.time() - fileManager[fullFilePath][0] > syncAvailableTimeoutSeconds and fileManager[fullFilePath][2] == False:
                 fileManager[fullFilePath][2] = True  
                 print(fullFilePath + " flagged as available") 
+
+    if not checkProcess(motionProcessName):
+        ledIndication = LedIndication.STATIC_OFF       
+        return 
+
+    if anyFileBeingWrittenInto:
+        ledIndication = LedIndication.STATIC_ON
+    else:
+        if time.time() - ledIndicationChangeTimer > syncAvailableTimeoutSeconds and ledIndication == LedIndication.STATIC_ON:
+            ledIndication = LedIndication.BLINK
+        elif ledIndication == LedIndication.STATIC_OFF:
+            ledIndication = LedIndication.BLINK    
 
 def syncAndDeleteAvailableFiles():
     # sync files that are flagged to sync
@@ -164,7 +204,7 @@ def getYYMMDD():
 
 def verifyDir(ftpServer):
     try:
-        ftpResponse = ftpServer.mkd(f"{targetFtpPath}/{getYYMMDD()}")
+        ftpResponse = ftpServer.mkd(f"{targetFtpPath}/{getYYMMDD()}") # note: if FTP is running on windows, you might want "\\" instead of '/'
         print("Creating directory")
     except:
         pass
@@ -184,7 +224,44 @@ def initFtpAndSyncFile(fileName = ""):
 
     ftpServer.quit()
 
+def handleLed(event):
+    global ledIndication
+    
+    while 1: 
+        if ledIndication == LedIndication.BLINK:
+            GPIO.output(ledGpio, GPIO.HIGH) 
+            time.sleep(0.125)
+            GPIO.output(13, GPIO.LOW) 
+            time.sleep(0.375)
+
+        elif ledIndication == LedIndication.STATIC_ON:
+            GPIO.output(ledGpio, GPIO.HIGH) 
+            time.sleep(0.5)   
+
+        elif ledIndication == LedIndication.STATIC_OFF:
+            GPIO.output(ledGpio, GPIO.LOW) 
+            time.sleep(0.5)      
+
+        if event.is_set():
+            break
+
+def initGpio():
+    GPIO.setmode(GPIO.BCM) 
+    GPIO.setup(ledGpio, GPIO.OUT)
+
+def handleExit():
+    print("Cleaning up GPIO ...")
+    GPIO.cleanup()
+
 def main(): 
+    initGpio()
+
+    atexit.register(handleExit)
+
+    event = Event()
+    thread = Thread(target=handleLed, daemon=True, args=(event,), kwargs={})
+    thread.start()
+
     if uploadTarget == UploadTarget.GOOGLE_DRIVE:
         try:
             # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
