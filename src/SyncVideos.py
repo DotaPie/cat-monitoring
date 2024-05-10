@@ -1,7 +1,7 @@
 import os
 import os.path
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 import time
 import ftplib
 import psutil
@@ -15,24 +15,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 import atexit
-
-# ENUMS #
-class UploadTarget(Enum):
-    GOOGLE_DRIVE = 1
-    FTP = 2
-
-class LedIndication(Enum):
-    STATIC_OFF = 1
-    STATIC_ON = 2
-    BLINK = 3
-
-# GLOBALS #
-fileManager = {}
-thread = None
-event = None
-ledIndication = LedIndication.BLINK
-ledIndicationChangeTimer = 0
-ledGpio = 13 # use GPIO value, not physical board value
 
 '''
 Example of file manager state:
@@ -59,6 +41,25 @@ File test2.txt was written into 16 seconds ago, which most likely means it is re
 File test3.txt was written into only couple of miliseconds ago, which most likely means it is actively being written into.  
 '''
 
+# ENUMS #
+class UploadTarget(Enum):
+    GOOGLE_DRIVE = 1
+    FTP = 2
+
+class LedIndication(Enum):
+    STATIC_OFF = 1
+    STATIC_ON = 2
+    BLINK = 3
+
+# GLOBALS #
+fileManager = {}
+thread = None
+event = None
+ledIndication = LedIndication.BLINK
+ledIndicationChangeTimer = 0
+ledGpio = 13 # use GPIO value, not physical board value
+errLogFile = None
+
 # CONF - GENERAL #
 uploadTarget = UploadTarget.FTP
 syncAvailableTimeoutSeconds = 30 # how many seconds file must not be written into to be flagged as ready to sync
@@ -73,6 +74,12 @@ targetFtpPath = "/CatMonitoring/CatMonitoring" # note: if FTP is running on wind
 # PATHS - LOCAL #
 credentialsAndTokenPath = "/home/dotapie/CatMonitoring"
 videosPath = "/home/dotapie/CatMonitoring/Videos"
+rootPath, dummy = os.path.split(__file__)
+
+def logErr(errorMessage):
+    global errLogFile
+    errLogFile.write("[" + str(datetime.now()) + "] " + errorMessage + "\n")
+    errLogFile.flush()
 
 def checkProcess(process_name):
     for process in psutil.process_iter(['pid', 'name']):
@@ -185,12 +192,17 @@ def syncAndDeleteAvailableFiles():
                         # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
                         initGoogleDriveAndSyncFile(fileName)
                     except Exception as e:
-                        print("Google drive connection failed (" + repr(e) + ")")
+                        errorMessage = "Google drive connection failed (" + repr(e) + ")"
+                        print(errorMessage)
+                        logErr(errorMessage)
+
                 elif uploadTarget == UploadTarget.FTP:
                     try:
                         initFtpAndSyncFile(fileName)
                     except Exception as e:
-                        print("FTP connection failed (" + repr(e) + ")") 
+                        errorMessage = "FTP connection failed (" + repr(e) + ")"
+                        print(errorMessage)
+                        logErr(errorMessage) 
 
                 # remove file from file manager
                 fileManager.pop(fullFilePath)
@@ -250,10 +262,22 @@ def initGpio():
     GPIO.setup(ledGpio, GPIO.OUT)
 
 def handleExit():
+    global errLogFile
+
+    print("Closing error log file ...")
+    errLogFile.close()
+
     print("Cleaning up GPIO ...")
     GPIO.cleanup()
 
 def main(): 
+    global errLogFile
+    errLogFile = open(os.path.join(rootPath, "errorLogFile.log"), "a")
+    errLogFile.write("********************************************************************************\n")
+    errLogFile.write("Script started (" + str(datetime.now()) + ")\n")
+    errLogFile.write("********************************************************************************\n\n")
+    errLogFile.flush()
+
     initGpio()
 
     atexit.register(handleExit)
@@ -268,20 +292,35 @@ def main():
             initGoogleDriveAndSyncFile()
             print("Google drive connection verified")
         except Exception as e:
-            print("Google drive connection failed (" + repr(e) + ")")
+            errorMessage = "Google drive connection failed (" + repr(e) + ")"
+            print(errorMessage)
+            logErr(errorMessage)
+
     elif uploadTarget == UploadTarget.FTP:
         try:
             initFtpAndSyncFile()
             print("FTP connection verified")
         except Exception as e:
-            print("FTP connection failed (" + repr(e) + ")") 
+            errorMessage = "FTP connection failed (" + repr(e) + ")" 
+            print(errorMessage) 
+            logErr(errorMessage)
 
     while 1:
         # add new file to file manager, update timestamp if size changed, flag as available to sync if enaugh time without size change passes
-        fileManagerHandle()
+        try:
+            fileManagerHandle()
+        except Exception as e:
+            errorMessage = "Failed to handle file manager (" + repr(e) + ")"
+            print(errorMessage)
+            logErr(errorMessage)
 
         # sync all available files to sync, delete file from file manager and delete file from system
-        syncAndDeleteAvailableFiles()
+        try:
+            syncAndDeleteAvailableFiles()
+        except Exception as e:
+            errorMessage = "Failed to sync and delete available files (" + repr(e) + ")"
+            print(errorMessage)
+            logErr(errorMessage)
                 
         time.sleep(1)   
 
