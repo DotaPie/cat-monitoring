@@ -8,12 +8,6 @@ import psutil
 import RPi.GPIO as GPIO
 from threading import Thread
 from threading import Event
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
 import atexit
 
 '''
@@ -43,7 +37,7 @@ File test3.txt was written into only couple of miliseconds ago, which most likel
 
 # ENUMS #
 class UploadTarget(Enum):
-    GOOGLE_DRIVE = 1
+    UNDEFINED = 1
     FTP = 2
 
 class LedIndication(Enum):
@@ -86,58 +80,6 @@ def checkProcess(process_name):
         if process.info['name'] == process_name:
             return True
     return False
-
-def initGoogleDriveAndSyncFile(fileName = ""):
-    SCOPES = ["https://www.googleapis.com/auth/drive"]
-
-    fullFilePath = f"{videosPath}/{fileName}"
-    creds = None
-
-    if os.path.exists(credentialsAndTokenPath + "/token.json"):
-        creds = Credentials.from_authorized_user_file(credentialsAndTokenPath + "/token.json", SCOPES)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                credentialsAndTokenPath + "/credentials.json", SCOPES)
-            creds = flow.run_local_server(port=0)
-        
-        with open(credentialsAndTokenPath + '/token.json', 'w') as token:
-            token.write(creds.to_json())
-
-    service = build("drive", "v3", credentials=creds)
-
-    response = service.files().list(
-        q="name='CatMonitoring' and mimeType='application/vnd.google-apps.folder'",
-        spaces='drive'
-    ).execute()
-
-    if not response['files']:
-        file_metadata = {
-            "name": "CatMonitoring",
-            "mimeType": "application/vnd.google-apps.folder"
-        }
-
-        folder = service.files().create(body=file_metadata, fields="id").execute()
-
-        folder_id = folder.get('id')
-    else:
-        folder_id = response['files'][0]['id']
-
-    if not fileName == "":
-        file_metadata = {
-            "name": fileName,
-            "parents": [folder_id]
-        }
-
-        media = MediaFileUpload(fullFilePath)
-        upload_file = service.files().create(body=file_metadata,
-                                            media_body = media,
-                                            fields="id").execute()
-        
-        print(fullFilePath + " synced")
 
 def fileManagerHandle():
     global ledIndication
@@ -187,16 +129,7 @@ def syncAndDeleteAvailableFiles():
             fullFilePath = f"{videosPath}/{fileName}"
 
             if fileManager[fullFilePath][2] == True:
-                if uploadTarget == UploadTarget.GOOGLE_DRIVE:
-                    try:
-                        # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
-                        initGoogleDriveAndSyncFile(fileName)
-                    except Exception as e:
-                        errorMessage = "Google drive connection failed (" + repr(e) + ")"
-                        print(errorMessage)
-                        logErr(errorMessage)
-
-                elif uploadTarget == UploadTarget.FTP:
+                if uploadTarget == UploadTarget.FTP:
                     try:
                         initFtpAndSyncFile(fileName)
                     except Exception as e:
@@ -286,17 +219,7 @@ def main():
     thread = Thread(target=handleLed, daemon=True, args=(event,), kwargs={})
     thread.start()
 
-    if uploadTarget == UploadTarget.GOOGLE_DRIVE:
-        try:
-            # just to check if google drive connection can be initiated (verifies creation of token.json, etc...)
-            initGoogleDriveAndSyncFile()
-            print("Google drive connection verified")
-        except Exception as e:
-            errorMessage = "Google drive connection failed (" + repr(e) + ")"
-            print(errorMessage)
-            logErr(errorMessage)
-
-    elif uploadTarget == UploadTarget.FTP:
+    if uploadTarget == UploadTarget.FTP:
         try:
             initFtpAndSyncFile()
             print("FTP connection verified")
